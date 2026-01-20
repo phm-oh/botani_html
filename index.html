@@ -22,7 +22,7 @@
 
         <div class="controls">
             <button class="btn" onclick="loadAllPlants()">📋 ดึงข้อมูลทั้งหมด</button>
-            <button class="btn btn-warning" onclick="loadSampleData()">🔄 โหลดข้อมูลตัวอย่าง</button>
+            <button class="btn btn-warning" onclick="loadSampleData()">🔄 รีเฟรชข้อมูล</button>
             <button class="btn btn-danger" onclick="clearData()">🗑️ ล้างข้อมูล</button>
         </div>
 
@@ -73,20 +73,16 @@
                         <input type="text" id="editFamily" class="form-control">
                     </div>
                     <div class="form-group">
+                        <label class="form-label">หมวดหมู่/ลักษณะวิสัย</label>
+                        <input type="text" id="editCategory" class="form-control">
+                    </div>
+                    <div class="form-group">
                         <label class="form-label">ลักษณะเด่น</label>
                         <textarea id="editCharacteristics" class="form-control"></textarea>
                     </div>
                     <div class="form-group">
                         <label class="form-label">สถานที่พบ</label>
                         <input type="text" id="editLocation" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">สถานะการอนุรักษ์</label>
-                        <select id="editStatus" class="form-control">
-                            <option value="ปลอดภัย">ปลอดภัย</option>
-                            <option value="เสี่ยงต่อการสูญพันธุ์">เสี่ยงต่อการสูญพันธุ์</option>
-                            <option value="ใกล้สูญพันธุ์">ใกล้สูญพันธุ์</option>
-                        </select>
                     </div>
                 </form>
             </div>
@@ -117,6 +113,7 @@
         </div>
     </div>
 
+    <script src="data.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

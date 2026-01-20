@@ -3,90 +3,14 @@ const statusMessage = document.getElementById('statusMessage');
 const responseInfo = document.getElementById('responseInfo');
 const loadingSpinner = document.getElementById('loadingSpinner');
 
-// ข้อมูลตัวอย่าง - ปรับวันที่เป็นเดือนธันวาคม 2025 (ปีงบ 69 / ปีปฏิทิน 68)
-// *หมายเหตุ: ใน JavaScript ใช้ปี ค.ศ. (2025) เมื่อแสดงผลด้วย toLocaleDateString('th-TH') จะเป็น 2568
-let samplePlantsData = {
+// ตัวแปรเก็บข้อมูลปัจจุบัน (เริ่มต้นใช้ข้อมูลจาก data.js)
+// เราใช้ let เพื่อให้สามารถแก้ไขข้อมูลในหน่วยความจำได้
+let currentPlants = {
     status: "success",
     message: "ดึงข้อมูลพรรณไม้สำเร็จ",
-    data: [
-        { 
-            id: "BGO001", 
-            commonName: "ยางนา", 
-            scientificName: "Dipterocarpus alatus", 
-            family: "Dipterocarpaceae", 
-            characteristics: "ไม้ยืนต้นขนาดใหญ่ ใบหนาเงาดี รากอากาศ ใช้เป็นไม้ประดับในบ้าน", 
-            location: "สวนพฤกษศาสตร์โซน A", 
-            category: "พืชพื้นบ้าน", 
-            conservationStatus: "เสี่ยงต่อการสูญพันธุ์", 
-            recordDate: "2025-12-01" 
-        },
-        { 
-            id: "BGO002", 
-            commonName: "มะขามป้อม", 
-            scientificName: "Phyllanthus emblica", 
-            family: "Phyllanthaceae", 
-            characteristics: "ไม้ผลขนาดกลาง ผลกลมรสเปรี้ยวฝาด ใช้ทำยา วิตามินซีสูง", 
-            location: "สวนพฤกษศาสตร์โซน B", 
-            category: "พืชใช้ประโยชน์", 
-            conservationStatus: "ปลอดภัย", 
-            recordDate: "2025-12-05" 
-        },
-        { 
-            id: "BGO003", 
-            commonName: "ข้าวสารดอกใหญ่", 
-            scientificName: "Raphistemma pulchellum", 
-            family: "Apocynaceae", 
-            characteristics: "ไม้เถาเลื้อย ดอกช่อสีขาวสวยงาม มีกลิ่นหอม", 
-            location: "สวนพฤกษศาสตร์โซน C", 
-            category: "พืชประดับ", 
-            conservationStatus: "ปลอดภัย", 
-            recordDate: "2025-12-10" 
-        },
-        { 
-            id: "BGO004", 
-            commonName: "จันทน์ผา", 
-            scientificName: "Dracaena cochinchinensis", 
-            family: "Asparagaceae", 
-            characteristics: "ไม้พุ่มขนาดกลาง รูปทรงสวยงาม ชอบขึ้นตามภูเขาหินปูน", 
-            location: "สวนพฤกษศาสตร์โซน D", 
-            category: "พืชประดับ", 
-            conservationStatus: "เสี่ยงต่อการสูญพันธุ์", 
-            recordDate: "2025-12-12" 
-        },
-        { 
-            id: "BGO005", 
-            commonName: "พะยูง", 
-            scientificName: "Dalbergia cochinchinensis", 
-            family: "Fabaceae", 
-            characteristics: "ไม้ยืนต้นขนาดใหญ่ เนื้อไม้สีแดงสวยงาม ราคาแพง", 
-            location: "สวนพฤกษศาสตร์โซน E", 
-            category: "พืชเศรษฐกิจ", 
-            conservationStatus: "ใกล้สูญพันธุ์", 
-            recordDate: "2025-12-20" 
-        },
-        { 
-            id: "BGO006", 
-            commonName: "กระดังงาไทย", 
-            scientificName: "Cananga odorata", 
-            family: "Annonaceae", 
-            characteristics: "ไม้ยืนต้น ดอกสีเหลือง กลิ่นหอมแรง ใช้นำมันหอมระเหย", 
-            location: "สวนพฤกษศาสตร์โซน F", 
-            category: "พืชหอม", 
-            conservationStatus: "ปลอดภัย", 
-            recordDate: "2025-12-25" 
-        }
-    ],
-    total: 6,
+    data: [...plantsData], // คัดลอกข้อมูลจาก data.js
+    total: plantsData.length,
     timestamp: new Date().toISOString()
-};
-
-const plantImages = {
-    "BGO001": "img/ยางนา.jpg",
-    "BGO002": "img/มะขามป้อม.jfif", 
-    "BGO003": "img/กบข้าวสาร.jpg",
-    "BGO004": "img/หางไก่ป่า.jpg",
-    "BGO005": "img/ชิงชี่.jpg",
-    "BGO006": "img/กระดังงาใหญ่.jpg"
 };
 
 // --- Helper Functions ---
@@ -101,17 +25,7 @@ function hideLoading() { loadingSpinner.style.display = 'none'; }
 
 function showStatus(message, isError = false) {
     statusMessage.innerHTML = `<div class="status-message ${isError ? 'status-error' : 'status-success'}">${message}</div>`;
-    // Auto hide status after 3 seconds
     setTimeout(() => { statusMessage.innerHTML = ''; }, 3000);
-}
-
-function getStatusColor(status) {
-    switch(status) {
-        case 'ปลอดภัย': return '#2e7d32'; // สีเขียวเข้มขึ้น
-        case 'ใกล้สูญพันธุ์': return '#c62828'; // สีแดงเข้ม
-        case 'เสี่ยงต่อการสูญพันธุ์': return '#f9a825'; // สีเหลืองเข้ม
-        default: return '#666';
-    }
 }
 
 function showResponseInfo(data) {
@@ -136,15 +50,16 @@ function displayPlants(plants) {
     }
 
     plantsContainer.innerHTML = plants.map((plant) => {
-        const imagePath = plantImages[plant.id] || '';
+        // ใช้ dummy image ถ้าไม่มีรูปจริง
+        const imagePath = plant.imagePath || '';
         const imageHTML = imagePath ? 
             `<img src="${imagePath}" alt="${plant.commonName}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
              <div class="plant-image-placeholder" style="display: none;">🌿</div>` :
             `<div class="plant-image-placeholder">🌿</div>`;
 
-        // แปลงวันที่ให้เป็นรูปแบบไทย (เช่น 1 ธ.ค. 2568)
+        // แปลงวันที่เป็นไทย
         const dateObj = new Date(plant.recordDate);
-        const thaiDate = dateObj.toLocaleDateString('th-TH', { 
+        const thaiDate = isNaN(dateObj) ? plant.recordDate : dateObj.toLocaleDateString('th-TH', { 
             year: 'numeric', 
             month: 'long', 
             day: 'numeric' 
@@ -162,18 +77,16 @@ function displayPlants(plants) {
                         <span class="detail-value">${plant.id}</span>
                     </div>
                     <div class="plant-detail">
-                        <span class="detail-label">ตำแหน่ง:</span>
+                        <span class="detail-label">ประเภท:</span>
+                        <span class="detail-value">${plant.category || '-'}</span>
+                    </div>
+                    <div class="plant-detail">
+                        <span class="detail-label">สถานที่:</span>
                         <span class="detail-value">${plant.location}</span>
                     </div>
                     <div class="plant-detail">
-                        <span class="detail-label">วันที่บันทึก:</span>
+                        <span class="detail-label">วันที่:</span>
                         <span class="detail-value">${thaiDate}</span>
-                    </div>
-                    <div class="plant-detail">
-                        <span class="detail-label">สถานะ:</span>
-                        <span class="detail-value" style="color: ${getStatusColor(plant.conservationStatus)}; font-weight: bold;">
-                            ${plant.conservationStatus}
-                        </span>
                     </div>
                     
                     <div class="plant-actions">
@@ -198,10 +111,10 @@ function closeModal(modalId) {
 
 // 1. View Detail Logic
 function openViewModal(id) {
-    const plant = samplePlantsData.data.find(p => p.id === id);
+    const plant = currentPlants.data.find(p => p.id === id);
     if (!plant) return;
 
-    const imagePath = plantImages[plant.id] || '';
+    const imagePath = plant.imagePath || '';
     const imageHTML = imagePath ? 
         `<img src="${imagePath}" class="view-image" onerror="this.src='https://via.placeholder.com/400x250?text=No+Image'">` :
         `<div class="view-image" style="display:flex;align-items:center;justify-content:center;font-size:3em;color:#aaa;">🌿</div>`;
@@ -219,7 +132,7 @@ function openViewModal(id) {
         <div class="view-section">
             <p><span class="view-label">รหัสพรรณไม้:</span> ${plant.id}</p>
             <p><span class="view-label">วงศ์ (Family):</span> ${plant.family}</p>
-            <p><span class="view-label">หมวดหมู่:</span> ${plant.category || '-'}</p>
+            <p><span class="view-label">หมวดหมู่/ลักษณะวิสัย:</span> ${plant.category || '-'}</p>
         </div>
         <div class="view-section">
             <p class="view-label">ลักษณะเด่น:</p>
@@ -227,7 +140,6 @@ function openViewModal(id) {
         </div>
         <div class="view-section">
             <p><span class="view-label">สถานที่พบ:</span> ${plant.location}</p>
-            <p><span class="view-label">สถานะ:</span> <span style="color:${getStatusColor(plant.conservationStatus)};font-weight:bold;">${plant.conservationStatus}</span></p>
             <p><span class="view-label">วันที่บันทึก:</span> ${thaiDate}</p>
         </div>
     `;
@@ -238,45 +150,45 @@ function openViewModal(id) {
 
 // 2. Edit Logic
 function openEditModal(id) {
-    const plant = samplePlantsData.data.find(p => p.id === id);
+    const plant = currentPlants.data.find(p => p.id === id);
     if (!plant) return;
 
     document.getElementById('editId').value = plant.id;
     document.getElementById('editCommonName').value = plant.commonName;
     document.getElementById('editScientificName').value = plant.scientificName;
     document.getElementById('editFamily').value = plant.family;
+    document.getElementById('editCategory').value = plant.category || '';
     document.getElementById('editCharacteristics').value = plant.characteristics;
     document.getElementById('editLocation').value = plant.location;
-    document.getElementById('editStatus').value = plant.conservationStatus;
 
     openModal('editModal');
 }
 
 function saveEditPlant() {
     const id = document.getElementById('editId').value;
-    const plantIndex = samplePlantsData.data.findIndex(p => p.id === id);
+    const plantIndex = currentPlants.data.findIndex(p => p.id === id);
     
     if (plantIndex !== -1) {
-        // อัพเดตข้อมูลในตัวแปร
-        samplePlantsData.data[plantIndex] = {
-            ...samplePlantsData.data[plantIndex],
+        // อัปเดตข้อมูลในตัวแปร
+        currentPlants.data[plantIndex] = {
+            ...currentPlants.data[plantIndex],
             commonName: document.getElementById('editCommonName').value,
             scientificName: document.getElementById('editScientificName').value,
             family: document.getElementById('editFamily').value,
+            category: document.getElementById('editCategory').value,
             characteristics: document.getElementById('editCharacteristics').value,
-            location: document.getElementById('editLocation').value,
-            conservationStatus: document.getElementById('editStatus').value
+            location: document.getElementById('editLocation').value
         };
 
-        showStatus(`บันทึกข้อมูล ${samplePlantsData.data[plantIndex].commonName} เรียบร้อย!`);
-        displayPlants(samplePlantsData.data);
+        showStatus(`บันทึกข้อมูล ${currentPlants.data[plantIndex].commonName} เรียบร้อย!`);
+        displayPlants(currentPlants.data);
         closeModal('editModal');
     }
 }
 
 // 3. Delete Logic
 function openDeleteModal(id) {
-    const plant = samplePlantsData.data.find(p => p.id === id);
+    const plant = currentPlants.data.find(p => p.id === id);
     if (!plant) return;
 
     document.getElementById('deleteId').value = id;
@@ -286,24 +198,26 @@ function openDeleteModal(id) {
 
 function confirmDeletePlant() {
     const id = document.getElementById('deleteId').value;
-    // จำลองการลบ
-    samplePlantsData.data = samplePlantsData.data.filter(p => p.id !== id);
+    currentPlants.data = currentPlants.data.filter(p => p.id !== id);
     
     showStatus(`ลบข้อมูลเรียบร้อย!`);
-    showResponseInfo(samplePlantsData);
-    displayPlants(samplePlantsData.data);
+    showResponseInfo(currentPlants);
+    displayPlants(currentPlants.data);
     closeModal('deleteModal');
 }
 
 // --- Data Loading Functions ---
 function loadAllPlants() {
     showLoading();
+    // จำลองการโหลดข้อมูล (ใช้ข้อมูลจาก data.js ที่โหลดมาแล้ว)
     setTimeout(() => {
         hideLoading();
-        showStatus(`ดึงข้อมูลสำเร็จ! พบ ${samplePlantsData.data.length} รายการ`);
-        showResponseInfo(samplePlantsData);
-        displayPlants(samplePlantsData.data);
-    }, 1000);
+        // รีเซ็ตข้อมูลกลับไปเป็นค่าเริ่มต้นจาก data.js
+        currentPlants.data = [...plantsData]; 
+        showStatus(`ดึงข้อมูลสำเร็จ! พบ ${currentPlants.data.length} รายการ`);
+        showResponseInfo(currentPlants);
+        displayPlants(currentPlants.data);
+    }, 800);
 }
 
 function loadSampleData() {
@@ -324,7 +238,7 @@ window.onclick = function(event) {
     }
 }
 
-// เริ่มต้นทำงาน
+// เริ่มต้นทำงานทันทีที่โหลดหน้าเว็บ
 window.addEventListener('load', () => {
-    loadSampleData();
+    loadAllPlants();
 });
