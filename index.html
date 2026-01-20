@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการข้อมูลพรรณไม้ - API Response Display</title>
+    <style>
+        /* --- CSS เดิม --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Sarabun', Arial, sans-serif; background: linear-gradient(135deg, #7ccfbd 0%, #54aa22 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: rgba(255, 255, 255, 0.95); border-radius: 15px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1); overflow: hidden; position: relative; }
+        .header { background: linear-gradient(135deg, #2d5016 0%, #3e6b1f 100%); color: white; padding: 30px; text-align: center; }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); }
+        .subtitle { font-size: 1.2em; opacity: 0.9; }
+        .api-info { background: #f8f9fa; padding: 20px; border-left: 5px solid #28a745; margin: 20px; border-radius: 8px; }
+        .api-url { font-family: 'Courier New', monospace; background: #343a40; color: #28a745; padding: 10px 15px; border-radius: 5px; margin: 10px 0; font-weight: bold; }
+        .controls { display: flex; justify-content: center; gap: 15px; padding: 20px; flex-wrap: wrap; }
+        .btn { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border: none; padding: 12px 25px; border-radius: 25px; cursor: pointer; font-size: 16px; font-weight: bold; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3); }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4); }
+        .btn:active { transform: translateY(0); }
+        .btn-danger { background: linear-gradient(135deg, #dc3545 0%, #e74c3c 100%); box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3); }
+        .btn-warning { background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%); box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3); }
+        .btn-secondary { background: #6c757d; box-shadow: none; } /* เพิ่มปุ่มสีเทา */
+        .plants-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px; padding: 20px; }
+        .plant-card { background: white; border-radius: 15px; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1); overflow: hidden; transition: all 0.3s ease; border: 2px solid transparent; }
+        .plant-card:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15); border-color: #28a745; }
+        .plant-image { width: 100%; height: 200px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #a8e6cf 0%, #7fcdcd 100%); }
+        .plant-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
+        .plant-card:hover .plant-image img { transform: scale(1.05); }
+        .plant-image-placeholder { font-size: 4em; color: rgba(255, 255, 255, 0.8); text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); }
+        .plant-content { padding: 25px; }
+        .plant-name { font-size: 1.5em; font-weight: bold; color: #2d5016; margin-bottom: 5px; }
+        .plant-scientific { font-style: italic; color: #666; font-size: 1.1em; margin-bottom: 15px; }
+        .plant-detail { margin-bottom: 10px; display: flex; align-items: flex-start; }
+        .detail-label { font-weight: bold; color: #495057; min-width: 80px; margin-right: 10px; }
+        .detail-value { color: #666; flex: 1; }
+        .plant-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-small { padding: 8px 15px; font-size: 14px; border-radius: 20px; }
+        .loading { text-align: center; padding: 50px; font-size: 1.2em; color: #666; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #28a745; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .status-message { padding: 15px; margin: 20px; border-radius: 8px; text-align: center; font-weight: bold; }
+        .status-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .response-info { background: #e9ecef; padding: 15px; margin: 20px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 14px; }
+        
+        /* --- CSS ที่เพิ่มใหม่สำหรับ Modal --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5); z-index: 1000;
+            display: none; justify-content: center; align-items: center;
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        .modal-box {
+            background: white; width: 90%; max-width: 600px;
+            border-radius: 15px; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            overflow: hidden; transform: translateY(20px); transition: transform 0.3s ease;
+            max-height: 90vh; display: flex; flex-direction: column;
+        }
+        .modal-overlay.active .modal-box { transform: translateY(0); }
+        .modal-header {
+            padding: 20px; background: #f8f9fa; border-bottom: 1px solid #e9ecef;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .modal-title { font-size: 1.5em; font-weight: bold; color: #2d5016; }
+        .modal-close { font-size: 1.5em; cursor: pointer; color: #666; transition: color 0.2s; }
+        .modal-close:hover { color: #dc3545; }
+        .modal-body { padding: 25px; overflow-y: auto; }
+        .modal-footer {
+            padding: 20px; background: #f8f9fa; border-top: 1px solid #e9ecef;
+            display: flex; justify-content: flex-end; gap: 10px;
+        }
+
+        /* Form Styles */
+        .form-group { margin-bottom: 15px; }
+        .form-label { display: block; margin-bottom: 5px; font-weight: bold; color: #495057; }
+        .form-control {
+            width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 8px;
+            font-family: inherit; font-size: 16px; transition: border-color 0.2s;
+        }
+        .form-control:focus { outline: none; border-color: #28a745; box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.2); }
+        textarea.form-control { min-height: 100px; resize: vertical; }
+
+        /* View Detail Styles */
+        .view-image { width: 100%; height: 250px; object-fit: cover; border-radius: 10px; margin-bottom: 20px; background: #eee; }
+        .view-section { margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .view-section:last-child { border-bottom: none; }
+        
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2em; }
+            .plants-grid { grid-template-columns: 1fr; padding: 10px; }
+            .controls { flex-direction: column; align-items: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌿 ระบบจัดการข้อมูลพรรณไม้</h1>
+            <div class="subtitle">วิทยาลัยอาชีวศึกษาอุดรธานี - API Response Display</div>
+        </div>
+
+        <div class="api-info">
+            <strong>API Endpoint:</strong>
+            <div class="api-url">GET https://plants-api.udvc.ac.th/api/plants</div>
+            <div>Status: <span style="color: #28a745; font-weight: bold;">Connected ✓</span></div>
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="loadAllPlants()">📋 ดึงข้อมูลทั้งหมด</button>
+            <button class="btn btn-warning" onclick="loadSampleData()">🔄 โหลดข้อมูลตัวอย่าง</button>
+            <button class="btn btn-danger" onclick="clearData()">🗑️ ล้างข้อมูล</button>
+        </div>
+
+        <div id="statusMessage"></div>
+        <div id="responseInfo"></div>
+        
+        <div id="loadingSpinner" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <div>กำลังโหลดข้อมูล...</div>
+        </div>
+
+        <div id="plantsContainer" class="plants-grid">
+            </div>
+    </div>
+
+    <div id="viewModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title">📖 รายละเอียดพรรณไม้</div>
+                <div class="modal-close" onclick="closeModal('viewModal')">&times;</div>
+            </div>
+            <div class="modal-body" id="viewModalContent">
+                </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('viewModal')">ปิด</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title">✏️ แก้ไขข้อมูลพรรณไม้</div>
+                <div class="modal-close" onclick="closeModal('editModal')">&times;</div>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <input type="hidden" id="editId">
+                    <div class="form-group">
+                        <label class="form-label">ชื่อสามัญ</label>
+                        <input type="text" id="editCommonName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">ชื่อวิทยาศาสตร์</label>
+                        <input type="text" id="editScientificName" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">วงศ์ (Family)</label>
+                        <input type="text" id="editFamily" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">ลักษณะเด่น</label>
+                        <textarea id="editCharacteristics" class="form-control"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">สถานที่พบ</label>
+                        <input type="text" id="editLocation" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">สถานะการอนุรักษ์</label>
+                        <select id="editStatus" class="form-control">
+                            <option value="ปลอดภัย">ปลอดภัย</option>
+                            <option value="เสี่ยงต่อการสูญพันธุ์">เสี่ยงต่อการสูญพันธุ์</option>
+                            <option value="ใกล้สูญพันธุ์">ใกล้สูญพันธุ์</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('editModal')">ยกเลิก</button>
+                <button class="btn" onclick="saveEditPlant()">บันทึกข้อมูล</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="deleteModal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 400px;">
+            <div class="modal-header" style="background: #ffebee;">
+                <div class="modal-title" style="color: #c62828;">⚠️ ยืนยันการลบ</div>
+                <div class="modal-close" onclick="closeModal('deleteModal')">&times;</div>
+            </div>
+            <div class="modal-body" style="text-align: center; padding: 30px;">
+                <div style="font-size: 50px; margin-bottom: 15px;">🗑️</div>
+                <p>คุณแน่ใจหรือไม่ที่จะลบข้อมูล:</p>
+                <h3 id="deletePlantName" style="color: #2d5016; margin: 10px 0;"></h3>
+                <p style="color: #666; font-size: 0.9em;">การกระทำนี้ไม่สามารถย้อนกลับได้</p>
+                <input type="hidden" id="deleteId">
+            </div>
+            <div class="modal-footer" style="justify-content: center;">
+                <button class="btn btn-secondary" onclick="closeModal('deleteModal')">ยกเลิก</button>
+                <button class="btn btn-danger" onclick="confirmDeletePlant()">ยืนยันลบ</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const plantsContainer = document.getElementById('plantsContainer');
+        const statusMessage = document.getElementById('statusMessage');
+        const responseInfo = document.getElementById('responseInfo');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+
+        // ข้อมูลตัวอย่าง
+        let samplePlantsData = {
+            status: "success",
+            message: "ดึงข้อมูลพรรณไม้สำเร็จ",
+            data: [
+                { id: "BGO001", commonName: "ยางนา", scientificName: "Dipterocarpus alatus", family: "Dipterocarpaceae", characteristics: "ไม้ยืนต้นขนาดใหญ่ ใบหนาเงาดี รากอากาศ ใช้เป็นไม้ประดับในบ้าน", location: "สวนพฤกษศาสตร์โซน A", category: "พืชพื้นบ้าน", conservationStatus: "เสี่ยงต่อการสูญพันธุ์", recordDate: "2024-07-11" },
+                { id: "BGO002", commonName: "มะขามป้อม", scientificName: "Phyllanthus emblica", family: "Phyllanthaceae", characteristics: "ไม้ผลขนาดกลาง ผลกลมรสเปรี้ยวฝาด ใช้ทำยา วิตามินซีสูง", location: "สวนพฤกษศาสตร์โซน B", category: "พืชใช้ประโยชน์", conservationStatus: "ปลอดภัย", recordDate: "2024-07-12" },
+                { id: "BGO003", commonName: "ข้าวสารดอกใหญ่", scientificName: "Raphistemma pulchellum", family: "Apocynaceae", characteristics: "ไม้เถาเลื้อย ดอกช่อสีขาวสวยงาม มีกลิ่นหอม", location: "สวนพฤกษศาสตร์โซน C", category: "พืชประดับ", conservationStatus: "ปลอดภัย", recordDate: "2024-07-13" },
+                { id: "BGO004", commonName: "จันทน์ผา", scientificName: "Dracaena cochinchinensis", family: "Asparagaceae", characteristics: "ไม้พุ่มขนาดกลาง รูปทรงสวยงาม ชอบขึ้นตามภูเขาหินปูน", location: "สวนพฤกษศาสตร์โซน D", category: "พืชประดับ", conservationStatus: "เสี่ยงต่อการสูญพันธุ์", recordDate: "2024-07-14" },
+                { id: "BGO005", commonName: "พะยูง", scientificName: "Dalbergia cochinchinensis", family: "Fabaceae", characteristics: "ไม้ยืนต้นขนาดใหญ่ เนื้อไม้สีแดงสวยงาม ราคาแพง", location: "สวนพฤกษศาสตร์โซน E", category: "พืชเศรษฐกิจ", conservationStatus: "ใกล้สูญพันธุ์", recordDate: "2024-07-15" },
+                { id: "BGO006", commonName: "กระดังงาไทย", scientificName: "Cananga odorata", family: "Annonaceae", characteristics: "ไม้ยืนต้น ดอกสีเหลือง กลิ่นหอมแรง ใช้นำมันหอมระเหย", location: "สวนพฤกษศาสตร์โซน F", category: "พืชหอม", conservationStatus: "ปลอดภัย", recordDate: "2024-07-16" }
+            ],
+            total: 6,
+            timestamp: new Date().toISOString()
+        };
+
+        const plantImages = {
+            "BGO001": "img/ยางนา.jpg",
+            "BGO002": "img/มะขามป้อม.jfif", 
+            "BGO003": "img/กบข้าวสาร.jpg",
+            "BGO004": "img/หางไก่ป่า.jpg",
+            "BGO005": "img/ชิงชี่.jpg",
+            "BGO006": "img/กระดังงาใหญ่.jpg"
+        };
+
+        // --- Helper Functions ---
+        function showLoading() {
+            loadingSpinner.style.display = 'block';
+            plantsContainer.innerHTML = '';
+            statusMessage.innerHTML = '';
+            responseInfo.innerHTML = '';
+        }
+
+        function hideLoading() { loadingSpinner.style.display = 'none'; }
+
+        function showStatus(message, isError = false) {
+            statusMessage.innerHTML = `<div class="status-message ${isError ? 'status-error' : 'status-success'}">${message}</div>`;
+            // Auto hide status after 3 seconds
+            setTimeout(() => { statusMessage.innerHTML = ''; }, 3000);
+        }
+
+        function getStatusColor(status) {
+            switch(status) {
+                case 'ปลอดภัย': return '#28a745';
+                case 'ใกล้สูญพันธุ์': return '#dc3545';
+                case 'เสี่ยงต่อการสูญพันธุ์': return '#ffc107';
+                default: return '#666';
+            }
+        }
+
+        function showResponseInfo(data) {
+            responseInfo.innerHTML = `
+                <div class="response-info">
+                    <strong>API Response:</strong><br>
+                    Status: ${data.status} | Total: ${data.data.length} | Timestamp: ${new Date().toLocaleTimeString('th-TH')}
+                </div>
+            `;
+        }
+
+        // --- Main Display Function ---
+        function displayPlants(plants) {
+            if (!plants || plants.length === 0) {
+                plantsContainer.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 50px; color: #666;">
+                        <h3>ไม่พบข้อมูลพรรณไม้</h3>
+                        <p>กรุณาโหลดข้อมูลใหม่</p>
+                    </div>
+                `;
+                return;
+            }
+
+            plantsContainer.innerHTML = plants.map((plant) => {
+                const imagePath = plantImages[plant.id] || '';
+                const imageHTML = imagePath ? 
+                    `<img src="${imagePath}" alt="${plant.commonName}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                     <div class="plant-image-placeholder" style="display: none;">🌿</div>` :
+                    `<div class="plant-image-placeholder">🌿</div>`;
+
+                return `
+                    <div class="plant-card">
+                        <div class="plant-image">${imageHTML}</div>
+                        <div class="plant-content">
+                            <div class="plant-name">${plant.commonName}</div>
+                            <div class="plant-scientific">${plant.scientificName}</div>
+                            
+                            <div class="plant-detail">
+                                <span class="detail-label">ID:</span>
+                                <span class="detail-value">${plant.id}</span>
+                            </div>
+                            <div class="plant-detail">
+                                <span class="detail-label">ตำแหน่ง:</span>
+                                <span class="detail-value">${plant.location}</span>
+                            </div>
+                            <div class="plant-detail">
+                                <span class="detail-label">สถานะ:</span>
+                                <span class="detail-value" style="color: ${getStatusColor(plant.conservationStatus)}; font-weight: bold;">
+                                    ${plant.conservationStatus}
+                                </span>
+                            </div>
+                            
+                            <div class="plant-actions">
+                                <button class="btn btn-small" onclick="openViewModal('${plant.id}')">📖 ดูรายละเอียด</button>
+                                <button class="btn btn-warning btn-small" onclick="openEditModal('${plant.id}')">✏️ แก้ไข</button>
+                                <button class="btn btn-danger btn-small" onclick="openDeleteModal('${plant.id}')">🗑️ ลบ</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // --- Modal Management Functions ---
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // 1. View Detail Logic
+        function openViewModal(id) {
+            const plant = samplePlantsData.data.find(p => p.id === id);
+            if (!plant) return;
+
+            const imagePath = plantImages[plant.id] || '';
+            const imageHTML = imagePath ? 
+                `<img src="${imagePath}" class="view-image" onerror="this.src='https://via.placeholder.com/400x250?text=No+Image'">` :
+                `<div class="view-image" style="display:flex;align-items:center;justify-content:center;font-size:3em;color:#aaa;">🌿</div>`;
+
+            const content = `
+                ${imageHTML}
+                <div class="view-section">
+                    <h2 style="color:#2d5016;">${plant.commonName}</h2>
+                    <p style="font-style:italic;color:#666;">${plant.scientificName}</p>
+                </div>
+                <div class="view-section">
+                    <p><strong>รหัสพรรณไม้:</strong> ${plant.id}</p>
+                    <p><strong>วงศ์ (Family):</strong> ${plant.family}</p>
+                    <p><strong>หมวดหมู่:</strong> ${plant.category || '-'}</p>
+                </div>
+                <div class="view-section">
+                    <p><strong>ลักษณะเด่น:</strong></p>
+                    <p style="color:#555; margin-top:5px;">${plant.characteristics}</p>
+                </div>
+                <div class="view-section">
+                    <p><strong>สถานที่พบ:</strong> ${plant.location}</p>
+                    <p><strong>สถานะ:</strong> <span style="color:${getStatusColor(plant.conservationStatus)};font-weight:bold;">${plant.conservationStatus}</span></p>
+                    <p><strong>วันที่บันทึก:</strong> ${new Date(plant.recordDate).toLocaleDateString('th-TH')}</p>
+                </div>
+            `;
+            
+            document.getElementById('viewModalContent').innerHTML = content;
+            openModal('viewModal');
+        }
+
+        // 2. Edit Logic
+        function openEditModal(id) {
+            const plant = samplePlantsData.data.find(p => p.id === id);
+            if (!plant) return;
+
+            document.getElementById('editId').value = plant.id;
+            document.getElementById('editCommonName').value = plant.commonName;
+            document.getElementById('editScientificName').value = plant.scientificName;
+            document.getElementById('editFamily').value = plant.family;
+            document.getElementById('editCharacteristics').value = plant.characteristics;
+            document.getElementById('editLocation').value = plant.location;
+            document.getElementById('editStatus').value = plant.conservationStatus;
+
+            openModal('editModal');
+        }
+
+        function saveEditPlant() {
+            const id = document.getElementById('editId').value;
+            const plantIndex = samplePlantsData.data.findIndex(p => p.id === id);
+            
+            if (plantIndex !== -1) {
+                // อัพเดตข้อมูลในตัวแปร (ในสถานการณ์จริงต้องส่ง API PUT/PATCH ไปที่ Server)
+                samplePlantsData.data[plantIndex] = {
+                    ...samplePlantsData.data[plantIndex],
+                    commonName: document.getElementById('editCommonName').value,
+                    scientificName: document.getElementById('editScientificName').value,
+                    family: document.getElementById('editFamily').value,
+                    characteristics: document.getElementById('editCharacteristics').value,
+                    location: document.getElementById('editLocation').value,
+                    conservationStatus: document.getElementById('editStatus').value
+                };
+
+                showStatus(`บันทึกข้อมูล ${samplePlantsData.data[plantIndex].commonName} เรียบร้อย!`);
+                displayPlants(samplePlantsData.data);
+                closeModal('editModal');
+            }
+        }
+
+        // 3. Delete Logic
+        function openDeleteModal(id) {
+            const plant = samplePlantsData.data.find(p => p.id === id);
+            if (!plant) return;
+
+            document.getElementById('deleteId').value = id;
+            document.getElementById('deletePlantName').textContent = plant.commonName;
+            openModal('deleteModal');
+        }
+
+        function confirmDeletePlant() {
+            const id = document.getElementById('deleteId').value;
+            // จำลองการลบ (ในสถานการณ์จริงต้องส่ง API DELETE ไปที่ Server)
+            samplePlantsData.data = samplePlantsData.data.filter(p => p.id !== id);
+            
+            showStatus(`ลบข้อมูลเรียบร้อย!`);
+            showResponseInfo(samplePlantsData);
+            displayPlants(samplePlantsData.data);
+            closeModal('deleteModal');
+        }
+
+        // --- Data Loading Functions ---
+        function loadAllPlants() {
+            showLoading();
+            setTimeout(() => {
+                hideLoading();
+                showStatus(`ดึงข้อมูลสำเร็จ! พบ ${samplePlantsData.data.length} รายการ`);
+                showResponseInfo(samplePlantsData);
+                displayPlants(samplePlantsData.data);
+            }, 1000);
+        }
+
+        function loadSampleData() {
+            loadAllPlants(); // ใช้ฟังก์ชันเดียวกันเพราะเรา Mock data อยู่แล้ว
+        }
+
+        function clearData() {
+            plantsContainer.innerHTML = '';
+            statusMessage.innerHTML = '';
+            responseInfo.innerHTML = '';
+            showStatus("ล้างข้อมูลหน้าจอเรียบร้อย", false);
+        }
+
+        // ปิด Modal เมื่อคลิกพื้นที่ว่างๆ รอบนอก
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal-overlay')) {
+                event.target.classList.remove('active');
+            }
+        }
+
+        // เริ่มต้นทำงาน
+        window.addEventListener('load', () => {
+            loadSampleData();
+        });
+    </script>
+</body>
+</html>

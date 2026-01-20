@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการข้อมูลพรรณไม้ - API Response Display</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Sarabun', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2d5016 0%, #3e6b1f 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .api-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-left: 5px solid #28a745;
+            margin: 20px;
+            border-radius: 8px;
+        }
+
+        .api-url {
+            font-family: 'Courier New', monospace;
+            background: #343a40;
+            color: #28a745;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            padding: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #e74c3c 100%);
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);
+            box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+        }
+
+        .plants-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            padding: 20px;
+        }
+
+        .plant-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .plant-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+            border-color: #28a745;
+        }
+
+        .plant-image {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #a8e6cf 0%, #7fcdcd 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4em;
+            color: rgba(255, 255, 255, 0.8);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .plant-content {
+            padding: 25px;
+        }
+
+        .plant-name {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2d5016;
+            margin-bottom: 5px;
+        }
+
+        .plant-scientific {
+            font-style: italic;
+            color: #666;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+        }
+
+        .plant-detail {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .detail-label {
+            font-weight: bold;
+            color: #495057;
+            min-width: 80px;
+            margin-right: 10px;
+        }
+
+        .detail-value {
+            color: #666;
+            flex: 1;
+        }
+
+        .plant-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-small {
+            padding: 8px 15px;
+            font-size: 14px;
+            border-radius: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2em;
+            color: #666;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #28a745;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status-message {
+            padding: 15px;
+            margin: 20px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .response-info {
+            background: #e9ecef;
+            padding: 15px;
+            margin: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .plants-grid {
+                grid-template-columns: 1fr;
+                padding: 10px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌿 ระบบจัดการข้อมูลพรรณไม้</h1>
+            <div class="subtitle">วิทยาลัยอาชีวศึกษาอุดรธานี - API Response Display</div>
+        </div>
+
+        <div class="api-info">
+            <strong>API Endpoint:</strong>
+            <div class="api-url">GET https://plants-api.udvc.ac.th/api/plants</div>
+            <div>Status: <span style="color: #28a745; font-weight: bold;">Connected ✓</span></div>
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="loadAllPlants()">📋 ดึงข้อมูลทั้งหมด</button>
+            <button class="btn btn-warning" onclick="loadSampleData()">🔄 โหลดข้อมูลตัวอย่าง</button>
+            <button class="btn btn-danger" onclick="clearData()">🗑️ ล้างข้อมูล</button>
+        </div>
+
+        <div id="statusMessage"></div>
+        <div id="responseInfo"></div>
+        
+        <div id="loadingSpinner" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <div>กำลังโหลดข้อมูล...</div>
+        </div>
+
+        <div id="plantsContainer" class="plants-grid">
+            <!-- Plants data will be displayed here -->
+        </div>
+    </div>
+
+    <script>
+        const plantsContainer = document.getElementById('plantsContainer');
+        const statusMessage = document.getElementById('statusMessage');
+        const responseInfo = document.getElementById('responseInfo');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+
+        // ข้อมูลตัวอย่างที่จำลอง API Response - อ้างอิงจากฐานข้อมูลสวนพฤกษศาสตร์
+        const samplePlantsData = {
+            status: "success",
+            message: "ดึงข้อมูลพรรณไม้สำเร็จ",
+            data: [
+                {
+                    id: "BGO001",
+                    commonName: "ยางนา",
+                    scientificName: "Ficus elastica",
+                    family: "Moraceae",
+                    characteristics: "ไม้ยืนต้นขนาดใหญ่ ใบหนาเงาดี รากอากาศ ใช้เป็นไม้ประดับในบ้าน ให้ออกซิเจนได้ดี",
+                    location: "สวนพฤกษศาสตร์โซน A",
+                    category: "พืชพื้นบ้าน",
+                    conservationStatus: "ปลอดภัย",
+                    recordDate: "2024-09-11",
+                    createdAt: "2024-09-11T10:30:00Z",
+                    updatedAt: "2024-09-11T10:30:00Z"
+                },
+                {
+                    id: "BGO002", 
+                    commonName: "มะขามป้อม",
+                    scientificName: "Phyllanthus acidus",
+                    family: "Phyllanthaceae", 
+                    characteristics: "ไม้ผลขนาดกลาง ผลเปรียว รสเปรี้ยว ใช้ทำอาหารและยาสมุนไพร ดอกเล็กสีเหลือง",
+                    location: "สวนพฤกษศาสตร์โซน B",
+                    category: "พืชใช้ประโยชน์",
+                    conservationStatus: "ปลอดภัย",
+                    recordDate: "2024-09-12",
+                    createdAt: "2024-09-12T14:30:00Z",
+                    updatedAt: "2024-09-12T14:30:00Z"
+                },
+                {
+                    id: "BGO003",
+                    commonName: "กบข้าวสาร",
+                    scientificName: "Homalomena cordata",
+                    family: "Araceae",
+                    characteristics: "พืชล้มลุก ใบหัวใจ ขึ้นในที่ร่มชื้น ใช้เป็นยาสมุนไพรรักษาโรคผิวหนัง ดอกช่อสีขาว",
+                    location: "สวนพฤกษศาสตร์โซน C",
+                    category: "พฤกษศาสตร์พื้นบ้าน", 
+                    conservationStatus: "ใกล้สูญพันธุ์",
+                    recordDate: "2024-09-13",
+                    createdAt: "2024-09-13T09:15:00Z",
+                    updatedAt: "2024-09-13T09:15:00Z"
+                },
+                {
+                    id: "BGO004",
+                    commonName: "หางไก่ป่า",
+                    scientificName: "Dracaena cambodiana",
+                    family: "Asparagaceae",
+                    characteristics: "ไม้พุ่มขนาดกลาง ใบเรียวยาว ต้านทานโรคได้ดี ใช้เป็นไม้ประดับ ทนแล้งได้ดี",
+                    location: "สวนพฤกษศาสตร์โซน D",
+                    category: "พืชประดับ",
+                    conservationStatus: "เสี่ยงต่อการสูญพันธุ์",
+                    recordDate: "2024-09-14",
+                    createdAt: "2024-09-14T16:20:00Z",
+                    updatedAt: "2024-09-14T16:20:00Z"
+                },
+                {
+                    id: "BGO005",
+                    commonName: "ชิงชี่",
+                    scientificName: "Dalbergia cochinchinensis",
+                    family: "Fabaceae",
+                    characteristics: "ไม้ยืนต้นขนาดใหญ่ เนื้อไม้แกนสีแดงเข้ม มีกลิ่นหอม ใช้ทำเฟอร์นิเจอร์และงานแกะสลัก",
+                    location: "สวนพฤกษศาสตร์โซน E",
+                    category: "พรรณไม้ที่ถูกคุกคาม",
+                    conservationStatus: "ใกล้สูญพันธุ์",
+                    recordDate: "2024-09-15",
+                    createdAt: "2024-09-15T11:45:00Z",
+                    updatedAt: "2024-09-15T11:45:00Z"
+                },
+                {
+                    id: "BGO006",
+                    commonName: "กระดังงาใหญ่",
+                    scientificName: "Macaranga denticulata",
+                    family: "Euphorbiaceae",
+                    characteristics: "ไม้ยืนต้นขนาดกลาง ใบใหญ่เป็นแผ่น ขอบใบหยัก เป็นอาหารของแมลงหลายชนิด เติบโตเร็ว",
+                    location: "สวนพฤกษศาสตร์โซน F",
+                    category: "พืชท้องถิ่น",
+                    conservationStatus: "ปลอดภัย",
+                    recordDate: "2024-09-16",
+                    createdAt: "2024-09-16T13:22:00Z",
+                    updatedAt: "2024-09-16T13:22:00Z"
+                }
+            ],
+            total: 6,
+            timestamp: new Date().toISOString()
+        };
+
+        const plantEmojis = ["🌿", "🌳", "🍃", "🌱", "🌲", "🌾"];
+
+        function showLoading() {
+            loadingSpinner.style.display = 'block';
+            plantsContainer.innerHTML = '';
+            statusMessage.innerHTML = '';
+            responseInfo.innerHTML = '';
+        }
+
+        function hideLoading() {
+            loadingSpinner.style.display = 'none';
+        }
+
+        function showStatus(message, isError = false) {
+            statusMessage.innerHTML = `
+                <div class="status-message ${isError ? 'status-error' : 'status-success'}">
+                    ${message}
+                </div>
+            `;
+        }
+
+        function showResponseInfo(data) {
+            responseInfo.innerHTML = `
+                <div class="response-info">
+                    <strong>API Response:</strong><br>
+                    Status: ${data.status}<br>
+                    Total Records: ${data.total}<br>
+                    Timestamp: ${data.timestamp}<br>
+                    Message: ${data.message}
+                </div>
+            `;
+        }
+
+        function displayPlants(plants) {
+            if (!plants || plants.length === 0) {
+                plantsContainer.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 50px; color: #666;">
+                        <h3>ไม่พบข้อมูลพรรณไม้</h3>
+                        <p>กรุณาโหลดข้อมูลใหม่</p>
+                    </div>
+                `;
+                return;
+            }
+
+            plantsContainer.innerHTML = plants.map((plant, index) => {
+                const imagePath = plantImages[plant.id] || '';
+                const imageHTML = imagePath ? 
+                    `<img src="${imagePath}" alt="${plant.commonName}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                     <div class="plant-image-placeholder" style="display: none;">🌿</div>` :
+                    `<div class="plant-image-placeholder">🌿</div>`;
+
+                return `
+                    <div class="plant-card">
+                        <div class="plant-image">
+                            ${imageHTML}
+                        </div>
+                        <div class="plant-content">
+                            <div class="plant-name">${plant.commonName}</div>
+                            <div class="plant-scientific">${plant.scientificName}</div>
+                            
+                            <div class="plant-detail">
+                                <span class="detail-label">ID:</span>
+                                <span class="detail-value">${plant.id}</span>
+                            </div>
+                            
+                            <div class="plant-detail">
+                                <span class="detail-label">วงศ์:</span>
+                                <span class="detail-value">${plant.family}</span>
+                            </div>
+                            
+                            <div class="plant-detail">
+                                <span class="detail-label">ลักษณะ:</span>
+                                <span class="detail-value">${plant.characteristics}</span>
+                            </div>
+                            
+                            <div class="plant-detail">
+                                <span class="detail-label">ตำแหน่ง:</span>
+                                <span class="detail-value">${plant.location}</span>
+                            </div>
+                            
+                            ${plant.category ? `
+                            <div class="plant-detail">
+                                <span class="detail-label">หมวดหมู่:</span>
+                                <span class="detail-value">${plant.category}</span>
+                            </div>` : ''}
+                            
+                            ${plant.conservationStatus ? `
+                            <div class="plant-detail">
+                                <span class="detail-label">สถานะ:</span>
+                                <span class="detail-value" style="color: ${getStatusColor(plant.conservationStatus)}; font-weight: bold;">
+                                    ${plant.conservationStatus}
+                                </span>
+                            </div>` : ''}
+                            
+                            <div class="plant-detail">
+                                <span class="detail-label">วันที่บันทึก:</span>
+                                <span class="detail-value">${new Date(plant.recordDate).toLocaleDateString('th-TH')}</span>
+                            </div>
+                            
+                            <div class="plant-actions">
+                                <button class="btn btn-small" onclick="viewDetail('${plant.id}')">📖 ดูรายละเอียด</button>
+                                <button class="btn btn-warning btn-small" onclick="editPlant('${plant.id}')">✏️ แก้ไข</button>
+                                <button class="btn btn-danger btn-small" onclick="deletePlant('${plant.id}')">🗑️ ลบ</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getStatusColor(status) {
+            switch(status) {
+                case 'ปลอดภัย': return '#28a745';
+                case 'ใกล้สูญพันธุ์': return '#dc3545';
+                case 'เสี่ยงต่อการสูญพันธุ์': return '#ffc107';
+                default: return '#666';
+            }
+        }
+
+        function loadAllPlants() {
+            showLoading();
+            
+            // จำลองการเรียก API
+            setTimeout(() => {
+                hideLoading();
+                showStatus(`โหลดข้อมูลสำเร็จ! พบข้อมูลพรรณไม้ ${samplePlantsData.total} รายการ`);
+                showResponseInfo(samplePlantsData);
+                displayPlants(samplePlantsData.data);
+            }, 1500);
+        }
+
+        function loadSampleData() {
+            showLoading();
+            
+            setTimeout(() => {
+                hideLoading();
+                showStatus("โหลดข้อมูลตัวอย่างสำเร็จ!");
+                showResponseInfo(samplePlantsData);
+                displayPlants(samplePlantsData.data);
+            }, 800);
+        }
+
+        function clearData() {
+            plantsContainer.innerHTML = '';
+            statusMessage.innerHTML = '';
+            responseInfo.innerHTML = '';
+            showStatus("ล้างข้อมูลเรียบร้อย", false);
+        }
+
+        function viewDetail(plantId) {
+            const plant = samplePlantsData.data.find(p => p.id === plantId);
+            if (plant) {
+                alert(`รายละเอียดพรรณไม้:\n\nID: ${plant.id}\nชื่อสามัญ: ${plant.commonName}\nชื่อวิทยาศาสตร์: ${plant.scientificName}\nวงศ์: ${plant.family}\nลักษณะเด่น: ${plant.characteristics}\nตำแหน่ง: ${plant.location}`);
+            }
+        }
+
+        function editPlant(plantId) {
+            showStatus(`กำลังแก้ไขข้อมูลพรรณไม้ ID: ${plantId}`, false);
+            // จำลอง API call สำหรับแก้ไข
+            setTimeout(() => {
+                showStatus(`แก้ไขข้อมูลพรรณไม้ ID: ${plantId} สำเร็จ!`);
+            }, 1000);
+        }
+
+        function deletePlant(plantId) {
+            if (confirm(`คุณต้องการลบข้อมูลพรรณไม้ ID: ${plantId} หรือไม่?`)) {
+                showStatus(`กำลังลบข้อมูลพรรณไม้ ID: ${plantId}...`, false);
+                // จำลอง API call สำหรับลบ
+                setTimeout(() => {
+                    showStatus(`ลบข้อมูลพรรณไม้ ID: ${plantId} สำเร็จ!`);
+                    // อัพเดตการแสดงผล
+                    const updatedData = samplePlantsData.data.filter(p => p.id !== plantId);
+                    displayPlants(updatedData);
+                }, 1000);
+            }
+        }
+
+        // โหลดข้อมูลเริ่มต้น - เรียกทันทีแทนที่จะรอ
+        window.addEventListener('load', () => {
+            loadSampleData(); // เรียกทันทีไม่ต้อง setTimeout
+        });
+    </script>
+</body>
+</html>
